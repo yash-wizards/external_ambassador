@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Third-party parent — INTOTO embed test</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        background: #111827;
+        color: #f9fafb;
+      }
+      header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #374151;
+      }
+      p {
+        margin: 8px 0 0;
+        color: #d1d5db;
+        max-width: 70ch;
+      }
+      iframe {
+        display: block;
+        width: 100%;
+        height: calc(100vh - 108px);
+        border: 0;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Parent site (http://localhost:5199)</strong>
+      <p>
+        This page is a different origin from the ambassador app. Replace the iframe
+        <code>src</code> with the deployed URL. Do not add tokens to the query string.
+      </p>
+    </header>
+    <iframe
+      id="ambassador"
+      src="http://localhost:5180/external-ambassador"
+      title="INTOTO External Ambassador"
+      width="100%"
+      height="800"
+      allow="clipboard-write; popups"
+    ></iframe>
+    <script>
+      const frame = document.getElementById('ambassador');
+      const targetOrigin = 'http://localhost:5180';
+      frame.addEventListener('load', () => {
+        frame.contentWindow?.postMessage({ type: 'intoto:ping' }, targetOrigin);
+      });
+      window.addEventListener('message', (event) => {
+        if (event.origin !== targetOrigin) return;
+        if (event.data?.type === 'intoto:ready') {
+          console.info('Ambassador app is ready inside the iframe.');
+        }
+      });
+    </script>
+  </body>
+</html>
