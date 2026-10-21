@@ -39,7 +39,7 @@
     </header>
     <iframe
       id="ambassador"
-      src="http://localhost:5180/external-ambassador"
+      src="http://localhost:5181/external-ambassador"
       title="INTOTO External Ambassador"
       width="100%"
       height="800"
@@ -47,9 +47,12 @@
     ></iframe>
     <script>
       const frame = document.getElementById('ambassador');
-      const targetOrigin = 'http://localhost:5180';
+      const targetOrigin = 'http://localhost:5181';
       frame.addEventListener('load', () => {
-        frame.contentWindow?.postMessage({ type: 'intoto:ping' }, targetOrigin);
+        frame.contentWindow?.postMessage(
+          { type: 'intoto:ping', pageUrl: window.location.href },
+          targetOrigin,
+        );
       });
       window.addEventListener('message', (event) => {
         if (event.origin !== targetOrigin) return;

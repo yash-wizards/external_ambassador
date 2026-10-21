@@ -181,6 +181,12 @@ textarea { padding: 10px 12px; width: 100%; resize: vertical; }
 }
 .ea-title-row { justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 .ea-home h1 { margin: 0; font-size: 32px; line-height: 1.2; font-weight: 700; }
+.ea-tenant { margin-bottom: 8px; }
+.ea-tenant p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin: 0; color: #7c7c7c; font-size: 14px; }
+.ea-tenant strong { color: #02a3ca; font-size: 16px; font-weight: 700; }
+.ea-tenant-error { color: #8a3324; }
+.ea-host { margin-top: 6px; }
+.ea-host a { color: #02a3ca; font-weight: 600; word-break: break-all; }
 .ea-tools { gap: 16px; flex-wrap: wrap; }
 .ea-icon-link { display: grid; place-items: center; width: 32px; height: 32px; }
 .ea-login, .ea-logout {

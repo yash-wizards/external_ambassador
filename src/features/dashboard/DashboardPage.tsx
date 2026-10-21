@@ -3,9 +3,13 @@ import { Link } from 'react-router-dom';
 import { StateView } from '@/components/StateView';
 import { useAmbassadors } from '@/features/ambassadors/AmbassadorsProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { getConfig } from '@/config/env';
+import { resolveTenantDomain } from '@/config/tenantDomain';
 import { listMockCommunities } from '@/mocks/store';
 import { userFacingStatus } from '@/services/http';
 import { fetchCommunities } from '@/services/intotoApi';
+import { captureEmbedderUrl, getEmbedderUrl, subscribeEmbedderUrl } from '@/services/embedderUrl';
+import { fetchTenant, type TenantInfo } from '@/services/tenantApi';
 import type { Ambassador, Community } from '@/types/domain';
 
 type Audience = 'all' | 'online' | 'Student' | 'Alumni' | 'Staff' | 'program' | 'country';
@@ -89,6 +93,11 @@ export function DashboardPage() {
   const [country, setCountry] = useState('');
   const [openFaq, setOpenFaq] = useState(0);
   const [signingOut, setSigningOut] = useState(false);
+  const [tenant, setTenant] = useState<TenantInfo | null>(null);
+  const [tenantStatus, setTenantStatus] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
+  const [tenantError, setTenantError] = useState<string | null>(null);
+  const [hostUrl, setHostUrl] = useState<string | null>(() => getEmbedderUrl());
+  const tenantDomain = resolveTenantDomain(window.location.hostname, getConfig().tenantDomain);
 
   const load = () => {
     setCommunityStatus('loading');
@@ -112,6 +121,41 @@ export function DashboardPage() {
     // Reload when the visitor signs in so live lists can replace the public catalog.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, user?.id]);
+
+  useEffect(() => {
+    captureEmbedderUrl();
+    setHostUrl(getEmbedderUrl());
+    return subscribeEmbedderUrl(setHostUrl);
+  }, []);
+
+  useEffect(() => {
+    if (!tenantDomain) {
+      setTenant(null);
+      setTenantError(null);
+      setTenantStatus('empty');
+      return;
+    }
+
+    let cancelled = false;
+    setTenantStatus('loading');
+    setTenantError(null);
+    void fetchTenant(http, tenantDomain)
+      .then((next) => {
+        if (cancelled) return;
+        setTenant(next);
+        setTenantStatus('ready');
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setTenant(null);
+        setTenantError(userFacingStatus(error).message);
+        setTenantStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [http, tenantDomain]);
 
   const programs = useMemo(
     () => [...new Set(ambassadors.map((item) => item.company).filter(Boolean))],
@@ -172,6 +216,25 @@ export function DashboardPage() {
     <div className="ea-home">
       <header className="ea-top">
         <div className="ea-intro">
+          <div className="ea-tenant" aria-live="polite">
+            {tenantStatus === 'loading' ? <p>Loading university…</p> : null}
+            {tenant ? (
+              <p>
+                <strong>{tenant.name}</strong>
+                {tenant.shortCode ? <span>{tenant.shortCode}</span> : null}
+                {tenant.tenantKey ? <span>{tenant.tenantKey}</span> : null}
+              </p>
+            ) : null}
+            {tenantStatus === 'error' ? <p className="ea-tenant-error">{tenantError}</p> : null}
+            {tenantStatus === 'empty' ? (
+              <p className="ea-tenant-error">Open this page from a university address to load tenant details.</p>
+            ) : null}
+            {hostUrl ? (
+              <p className="ea-host">
+                Added on <a href={hostUrl}>{hostUrl}</a>
+              </p>
+            ) : null}
+          </div>
           <div className="ea-title-row">
             <h1>Student Ambassadors</h1>
             <div className="ea-tools">

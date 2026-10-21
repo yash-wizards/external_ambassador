@@ -8,7 +8,14 @@ export function resolveFrameAncestors(raw: string | undefined, isDev: boolean): 
     .filter((origin) => HTTP_ORIGIN.test(origin));
 
   if (configured.length > 0) return configured;
-  if (isDev) return ['http://localhost:5199', 'http://127.0.0.1:5199'];
+  if (isDev) {
+    return [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:5199',
+      'http://127.0.0.1:5199',
+    ];
+  }
   return [];
 }
 
@@ -29,6 +36,9 @@ export function classifyParentMessage(data: unknown): ParentBridgeAction {
   const record = data as Record<string, unknown>;
   const sensitive = ['token', 'accessToken', 'refreshToken', 'password', 'secret'];
   if (sensitive.some((key) => key in record)) return 'ignore';
-  if (record.type === 'intoto:ping' && Object.keys(record).length === 1) return 'ping';
+  if (record.type !== 'intoto:ping') return 'ignore';
+  const keys = Object.keys(record);
+  if (keys.length === 1) return 'ping';
+  if (keys.length === 2 && keys.includes('pageUrl') && typeof record.pageUrl === 'string') return 'ping';
   return 'ignore';
 }

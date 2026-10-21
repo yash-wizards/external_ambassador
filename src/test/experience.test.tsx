@@ -38,7 +38,21 @@ describe('external ambassador experience', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (_url: string, init?: RequestInit) => {
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (String(url).includes('/auth/tenant/resolve')) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              info: {
+                name: 'Sardar Bhagwan Singh University',
+                shortCode: 'SBSU',
+                tenantKey: 'sbs_university',
+                tenantId: 'org_test',
+              },
+            }),
+            { status: 200 },
+          );
+        }
         if (init?.method === 'POST') {
           return new Response(JSON.stringify({ id: 11 }), { status: 201 });
         }
@@ -65,6 +79,8 @@ describe('external ambassador experience', () => {
     const user = userEvent.setup();
     renderAt('/external-ambassador');
     expect(await screen.findByRole('heading', { name: 'Student Ambassadors' })).toBeInTheDocument();
+    expect(await screen.findByText('Sardar Bhagwan Singh University')).toBeInTheDocument();
+    expect(screen.getByText('SBSU')).toBeInTheDocument();
     expect(await screen.findByText('Leanne Graham')).toBeInTheDocument();
     expect(screen.getByText('Arrival Circle')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Login/ Signup' })).toBeInTheDocument();

@@ -7,8 +7,11 @@ import {
 } from '@/config/framePolicy';
 import { layoutFromWidth } from '@/hooks/useContainerLayout';
 import { resolveAuthMode } from '@/config/env';
+import { resolveTenantDomain, tenantDomainFromHost } from '@/config/tenantDomain';
 import { validateEmail, validateMockPassword } from '@/features/auth/credentials';
 import { mapCommunity } from '@/services/intotoApi';
+import { parentUrlFromMessage } from '@/services/embedderUrl';
+import { mapTenant } from '@/services/tenantApi';
 import { authenticateMock, listMockCommunities, sendMockMessage, setMockFailure } from '@/mocks/store';
 
 describe('frame policy', () => {
@@ -26,8 +29,46 @@ describe('frame policy', () => {
 
   it('ignores parent messages that carry tokens or identity claims', () => {
     expect(classifyParentMessage({ type: 'intoto:ping' })).toBe('ping');
+    expect(classifyParentMessage({ type: 'intoto:ping', pageUrl: 'http://localhost:5199/' })).toBe('ping');
+    expect(classifyParentMessage({ type: 'intoto:ping', pageUrl: 'http://localhost:5199/', email: 'a@b.c' })).toBe('ignore');
     expect(classifyParentMessage({ type: 'intoto:ping', accessToken: 'secret' })).toBe('ignore');
     expect(classifyParentMessage({ type: 'intoto:user', email: 'a@b.c' })).toBe('ignore');
+  });
+
+  it('keeps a parent page URL only when it matches the message origin', () => {
+    const message = { type: 'intoto:ping', pageUrl: 'http://localhost:5199/campus' };
+    expect(parentUrlFromMessage(message, 'http://localhost:5199')).toBe('http://localhost:5199/campus');
+    expect(parentUrlFromMessage(message, 'https://evil.example')).toBeNull();
+    expect(parentUrlFromMessage({ type: 'intoto:ping', pageUrl: 'javascript:alert(1)' }, 'http://localhost:5199')).toBeNull();
+  });
+});
+
+describe('tenant domain', () => {
+  it('reads a university subdomain and falls back to the configured slug', () => {
+    expect(tenantDomainFromHost('sbs-university.localhost')).toBe('sbs-university');
+    expect(tenantDomainFromHost('sbs-university.dev.intoto.ca')).toBe('sbs-university');
+    expect(tenantDomainFromHost('localhost')).toBeNull();
+    expect(resolveTenantDomain('localhost', 'sbs-university')).toBe('sbs-university');
+    expect(resolveTenantDomain('other-university.localhost', 'sbs-university')).toBe('other-university');
+  });
+
+  it('maps the public tenant resolve payload', () => {
+    expect(
+      mapTenant({
+        info: {
+          name: 'Sardar Bhagwan Singh University',
+          shortCode: 'SBSU',
+          tenantKey: 'sbs_university',
+          tenantId: 'org_test',
+        },
+      }),
+    ).toEqual({
+      name: 'Sardar Bhagwan Singh University',
+      shortCode: 'SBSU',
+      tenantKey: 'sbs_university',
+      tenantId: 'org_test',
+    });
+    expect(mapTenant({ info: {} })).toBeNull();
   });
 });
 

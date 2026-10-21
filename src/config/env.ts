@@ -8,6 +8,7 @@ export interface AppConfig {
   auth0Audience: string;
   timeoutMs: number;
   frameAncestors: string[];
+  tenantDomain: string;
   isDev: boolean;
 }
 
@@ -42,6 +43,7 @@ export function getConfig(): AppConfig {
     auth0Audience: read('VITE_AUTH0_AUDIENCE'),
     timeoutMs: Number.isFinite(timeout) && timeout > 0 ? timeout : 30000,
     frameAncestors: resolveFrameAncestors(read('VITE_FRAME_ANCESTORS') || undefined, import.meta.env.DEV),
+    tenantDomain: read('VITE_TENANT_DOMAIN'),
     isDev: import.meta.env.DEV,
   };
 }

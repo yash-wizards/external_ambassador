@@ -26,6 +26,7 @@ function framePolicyPlugin(ancestors: string[]): Plugin {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const ancestors = resolveFrameAncestors(env.VITE_FRAME_ANCESTORS, mode === 'development');
+  const apiOrigin = (env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/api\/?$/, '').replace(/\/$/, '');
 
   return {
     plugins: [react(), framePolicyPlugin(ancestors)],
@@ -35,8 +36,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5180,
+      port: 5181,
       strictPort: true,
+      proxy: {
+        '/auth': { target: apiOrigin, changeOrigin: true },
+        '/api': { target: apiOrigin, changeOrigin: true },
+      },
     },
     preview: {
       port: 5180,

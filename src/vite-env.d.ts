@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_AUTH0_AUDIENCE?: string;
   readonly VITE_FRAME_ANCESTORS?: string;
   readonly VITE_API_TIMEOUT_MS?: string;
+  readonly VITE_TENANT_DOMAIN?: string;
 }
 
 interface ImportMeta {

@@ -12,10 +12,14 @@ import { ChatPage } from '@/features/chat/ChatPage';
 import { CommunitiesPage, CommunityDetailPage } from '@/features/communities/CommunitiesPage';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { VendorDetailPage, VendorsPage } from '@/features/vendors/VendorsPage';
+import { captureEmbedderUrl } from '@/services/embedderUrl';
 import { installParentBridge } from '@/services/parentBridge';
 
 export function App() {
-  useEffect(() => installParentBridge(getConfig().frameAncestors), []);
+  useEffect(() => {
+    captureEmbedderUrl();
+    return installParentBridge(getConfig().frameAncestors);
+  }, []);
 
   return (
     <AuthProvider>
